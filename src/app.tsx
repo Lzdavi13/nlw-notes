@@ -9,7 +9,7 @@ interface Note {
 }
 
 export function App() {
-  const [notes, setNote] = useState<Note[]>(() => {
+  const [notes, setNotes] = useState<Note[]>(() => {
     const notesOnStorage = localStorage.getItem("notes");
 
     if (notesOnStorage) {
@@ -30,9 +30,17 @@ export function App() {
 
     const arrayNotes = [newNote, ...notes];
 
-    setNote(arrayNotes);
+    setNotes(arrayNotes);
 
     localStorage.setItem("notes", JSON.stringify(arrayNotes));
+  }
+
+  function onNoteDeleted(id: string): void {
+    const arrayNotes = notes.filter((note) => note.id !== id);
+
+    localStorage.setItem("notes", JSON.stringify(arrayNotes));
+
+    setNotes(arrayNotes);
   }
 
   function handleSearch(event: ChangeEvent<HTMLInputElement>) {
@@ -65,7 +73,7 @@ export function App() {
       <div className="grid grid-col-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-[250px]">
         <NewNoteCard onNoteCreated={onNoteCreated} />
         {filteredNotes.map((note) => (
-          <NoteCard key={note.id} note={note} />
+          <NoteCard key={note.id} note={note} onNoteDeleted={onNoteDeleted} />
         ))}
       </div>
     </div>
