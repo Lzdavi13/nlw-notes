@@ -7,11 +7,15 @@ interface NewNoteCardProps {
   onNoteCreated: (content: string) => void;
 }
 
+let speechRecognition: SpeechRecognition | null;
+
 export function NewNoteCard({ onNoteCreated }: NewNoteCardProps) {
   const [shouldShowOnboarding, setShouldShowOnboarding] =
     useState<boolean>(true);
 
   const [content, setContent] = useState<string>("");
+
+  const [isRecording, setIsRecording] = useState(false);
 
   function handleStarEditor() {
     setShouldShowOnboarding(false);
@@ -38,6 +42,51 @@ export function NewNoteCard({ onNoteCreated }: NewNoteCardProps) {
     setShouldShowOnboarding(true);
 
     toast.success("Nota criada com sucesso");
+  }
+
+  function handleStartRecording() {
+    const isSpeechRecognitionAPIvailabe =
+      "SpeechRecognition" in window || "webkitSpeechRecognition" in window;
+
+    if (!isSpeechRecognitionAPIvailabe) {
+      alert("Infelizmente seu navegador não suporta a API de gravação!");
+      return;
+    }
+
+    setIsRecording(true);
+    setShouldShowOnboarding(false);
+
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    speechRecognition = new SpeechRecognition();
+
+    (speechRecognition.lang = "pt-BR"),
+      (speechRecognition.continuous = true),
+      (speechRecognition.maxAlternatives = 1);
+    speechRecognition.interimResults = true;
+
+    speechRecognition.onresult = (event) => {
+      const transcription = Array.from(event.results).reduce((text, result) => {
+        return text.concat(result[0].transcript);
+      }, "");
+
+      setContent(transcription);
+    };
+
+    speechRecognition.onerror = (event) => {
+      console.error(event);
+    };
+
+    return speechRecognition.start();
+  }
+
+  function handleStopRecording() {
+    setIsRecording(false);
+
+    if (speechRecognition !== null) {
+      return speechRecognition.stop();
+    }
   }
 
   return (
@@ -68,6 +117,7 @@ export function NewNoteCard({ onNoteCreated }: NewNoteCardProps) {
                 <p className="text-sm text-slate-400 leading-6">
                   Comece{" "}
                   <button
+                    onClick={handleStartRecording}
                     type="button"
                     className="text-lime-400 font-medium hover:underline"
                   >
@@ -92,13 +142,24 @@ export function NewNoteCard({ onNoteCreated }: NewNoteCardProps) {
               )}
             </div>
 
-            <button
-              type="submit"
-              onClick={handleSaveNote}
-              className="w-full text-center text-sm font-medium text-lime-950 bg-lime-400 py-4 outline-none hover:bg-lime-500"
-            >
-              Salvar nota
-            </button>
+            {isRecording ? (
+              <button
+                onClick={handleStopRecording}
+                type="button"
+                className="w-full flex items-center justify-center gap-2 text-center text-sm font-medium text-slate-300 bg-slate-900 py-4 outline-none hover:text-slate-100"
+              >
+                <div className="size-3 rounded-full bg-red-500 animate-pulse" />
+                Gravando! (clique p/ interromper)
+              </button>
+            ) : (
+              <button
+                type="submit"
+                onClick={handleSaveNote}
+                className="w-full text-center text-sm font-medium text-lime-950 bg-lime-400 py-4 outline-none hover:bg-lime-500"
+              >
+                Salvar nota
+              </button>
+            )}
           </form>
         </Dialog.Content>
       </Dialog.Portal>
