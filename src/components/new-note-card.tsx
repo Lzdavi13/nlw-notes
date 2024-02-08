@@ -3,9 +3,14 @@ import { X } from "lucide-react";
 import { ChangeEvent, FormEvent, useState } from "react";
 import { toast } from "sonner";
 
-export function NewNoteCard() {
+interface NewNoteCardProps {
+  onNoteCreated: (content: string) => void;
+}
+
+export function NewNoteCard({ onNoteCreated }: NewNoteCardProps) {
   const [shouldShowOnboarding, setShouldShowOnboarding] =
     useState<boolean>(true);
+
   const [content, setContent] = useState<string>("");
 
   function handleStarEditor() {
@@ -22,9 +27,16 @@ export function NewNoteCard() {
   function handleSaveNote(event: FormEvent) {
     event.preventDefault();
 
-    if (!content) {
+    if (content === "") {
       return;
     }
+
+    onNoteCreated(content);
+
+    setContent("");
+
+    setShouldShowOnboarding(true);
+
     toast.success("Nota criada com sucesso");
   }
 
@@ -55,7 +67,10 @@ export function NewNoteCard() {
               {shouldShowOnboarding ? (
                 <p className="text-sm text-slate-400 leading-6">
                   Comece{" "}
-                  <button className="text-lime-400 font-medium hover:underline">
+                  <button
+                    type="button"
+                    className="text-lime-400 font-medium hover:underline"
+                  >
                     gravando uma nota
                   </button>{" "}
                   em áudio ou se preferir{" "}
@@ -70,6 +85,7 @@ export function NewNoteCard() {
               ) : (
                 <textarea
                   autoFocus
+                  value={content}
                   className="flex-1 text-sm text-slate-400 resize-none bg-transparent outline-none"
                   onChange={handleContentChanged}
                 />
@@ -78,6 +94,7 @@ export function NewNoteCard() {
 
             <button
               type="submit"
+              onClick={handleSaveNote}
               className="w-full text-center text-sm font-medium text-lime-950 bg-lime-400 py-4 outline-none hover:bg-lime-500"
             >
               Salvar nota
